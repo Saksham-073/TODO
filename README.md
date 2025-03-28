@@ -26,7 +26,7 @@ cd backend then npm i
 ..cd then npm i 
 
 ### start 
-npm start in one terminal and in another terminal node backend/server.js
+npm start 
 
 ### Prerequisites
 
