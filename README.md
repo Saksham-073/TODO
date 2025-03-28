@@ -23,10 +23,11 @@ A feature-rich todo application built with React, Redux, and integrated with a w
 
 ## Installation
 cd backend then npm i
-..cd then npm i 
+cd.. then cd frontend then npm i
+cd.. then npm i
 
 ### start 
-npm start in one terminal and in another terminal node backend/server.js
+npm start 
 
 ### Prerequisites
 
