@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import TaskInput from "./TaskInput";
 import TaskList from "./TaskList";
 import { useDispatch, useSelector } from 'react-redux';
-import { loginSuccess, logout } from '../redux/authSlice';
+import { loginSuccess } from '../redux/authSlice';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Auth from './Auth';
@@ -17,11 +17,6 @@ const AppLayout = () => {
       if (storedUser) {
         dispatch(loginSuccess(JSON.parse(storedUser)));
       }
-    }, [dispatch]);
-  
-    useEffect(() => {
-      localStorage.removeItem('user');
-      dispatch(logout());
     }, [dispatch]);
   
     useEffect(() => {

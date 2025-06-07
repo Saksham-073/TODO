@@ -13,7 +13,6 @@
   "bugs": {
     "url": "https://github.com/Saksham-073/ReactProject/issues"
   },
-  
   "devDependencies": {
     "concurrently": "^9.1.2"
   }
