@@ -1,30 +1,25 @@
-import axios from 'axios';
+import client from './client';
 
-const API_URL = 'http://localhost:5000/api';
+// POST /api/auth/register -> { token, user }
+export const registerUser = async (credentials) => {
+  const { data } = await client.post('/auth/register', credentials);
+  return data;
+};
 
+// POST /api/auth/login -> { token, user }
 export const loginUser = async (credentials) => {
-  try {
-    const response = await axios.post(`${API_URL}/login`, credentials);
-    return response.data;
-  } catch (error) {
-    throw new Error(error.response?.data?.message || 'Login failed');
-  }
+  const { data } = await client.post('/auth/login', credentials);
+  return data;
 };
 
+// POST /api/auth/logout
 export const logoutUser = async () => {
-  try {
-    const response = await axios.post(`${API_URL}/logout`);
-    return response.data;
-  } catch (error) {
-    throw new Error(error.response?.data?.message || 'Logout failed');
-  }
+  const { data } = await client.post('/auth/logout');
+  return data;
 };
 
-export const checkAuthStatus = async () => {
-  try {
-    const response = await axios.get(`${API_URL}/check-auth`);
-    return response.data;
-  } catch (error) {
-    throw new Error(error.response?.data?.message || 'Not authenticated');
-  }
+// GET /api/auth/me -> { user }
+export const fetchCurrentUser = async () => {
+  const { data } = await client.get('/auth/me');
+  return data;
 };

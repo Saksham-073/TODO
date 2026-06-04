@@ -1,7 +1,7 @@
+import client from './client';
+
+// GET /api/weather/:location -> { temp, tempC, condition, icon, humidity, ... }
 export const fetchWeather = async (location) => {
-    const response = await fetch(`http://localhost:5000/api/weather/${location}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch weather data');
-    }
-    return await response.json();
-  };
+  const { data } = await client.get(`/weather/${encodeURIComponent(location)}`);
+  return data;
+};

@@ -1,12 +1,35 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { deleteTask, toggleTaskComplete } from '../redux/todoSlice';
 import { format, parseISO, isBefore } from 'date-fns';
+import { AlertCircle, Cloud, Calendar, Trash2, ListTodo } from 'lucide-react';
+
+const FILTERS = [
+  { key: 'all', label: 'All' },
+  { key: 'active', label: 'Active' },
+  { key: 'completed', label: 'Done' },
+];
+
+const SORTS = [
+  { key: 'created', label: 'Newest first' },
+  { key: 'priority', label: 'Priority' },
+  { key: 'dueDate', label: 'Due date' },
+];
+
+const PRIORITY_RANK = { High: 0, Medium: 1, Low: 2 };
+
+// Warm priority styling: clay (high) · ochre (medium) · sage (low)
+const PRIORITY_STYLES = {
+  High: { bar: 'bg-clay', badge: 'bg-clay-soft text-clay-dark' },
+  Medium: { bar: 'bg-ochre', badge: 'bg-ochre-soft text-[#9a6a1e]' },
+  Low: { bar: 'bg-sage', badge: 'bg-sage-soft text-sage-dark' },
+};
 
 const TaskList = () => {
   const dispatch = useDispatch();
   const { tasks, weatherData, loading, error } = useSelector((state) => state.todos);
-
+  const [filter, setFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('created');
 
   const getCategoryIcon = (category) => {
     switch (category) {
@@ -27,178 +50,189 @@ const TaskList = () => {
     return isBefore(parseISO(dueDate), new Date());
   };
 
+  const activeCount = useMemo(
+    () => tasks.filter((t) => !t.completed).length,
+    [tasks]
+  );
+
+  const visibleTasks = useMemo(() => {
+    const filtered = tasks.filter((task) => {
+      if (filter === 'active') return !task.completed;
+      if (filter === 'completed') return task.completed;
+      return true;
+    });
+
+    const sorted = [...filtered].sort((a, b) => {
+      if (sortBy === 'priority') {
+        return (PRIORITY_RANK[a.priority] ?? 3) - (PRIORITY_RANK[b.priority] ?? 3);
+      }
+      if (sortBy === 'dueDate') {
+        // Tasks without a due date sink to the bottom.
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return parseISO(a.dueDate) - parseISO(b.dueDate);
+      }
+      // Newest first by creation time (id is a timestamp fallback).
+      const aTime = a.createdAt ? parseISO(a.createdAt).getTime() : a.id;
+      const bTime = b.createdAt ? parseISO(b.createdAt).getTime() : b.id;
+      return bTime - aTime;
+    });
+
+    return sorted;
+  }, [tasks, filter, sortBy]);
+
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-6 space-y-3">
-        <div className="relative">
-          <div className="w-12 h-12 border-4 border-blue-100 rounded-full"></div>
-          <div className="absolute top-0 left-0 w-12 h-12 border-4 border-t-blue-500 border-r-blue-500 border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+      <div className="flex flex-col items-center justify-center py-10 space-y-4">
+        <div className="relative h-12 w-12">
+          <div className="absolute inset-0 rounded-full border-4 border-sand"></div>
+          <div className="absolute inset-0 rounded-full border-4 border-t-clay border-r-clay border-b-transparent border-l-transparent animate-spin"></div>
         </div>
-        <p className="text-gray-600 font-medium">Loading weather data...</p>
+        <p className="text-muted font-medium">Fetching the forecast…</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border-l-4 border-red-500 rounded-lg p-4 flex items-start">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5 mr-2"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          <path
-            fillRule="evenodd"
-            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-            clipRule="evenodd"
-          />
-        </svg>
-        <div className="text-red-800">
-          <p className="font-medium">{error}</p>
-        </div>
+      <div className="card-organic p-4 flex items-start gap-2">
+        <AlertCircle className="h-5 w-5 text-clay-dark flex-shrink-0 mt-0.5" />
+        <p className="text-clay-dark font-medium">{error}</p>
       </div>
     );
   }
 
+  const emptyState = (message) => (
+    <div className="card-organic px-6 py-12 text-center animate-fade-in-up">
+      <div className="mx-auto w-14 h-14 rounded-2xl bg-sage-soft flex items-center justify-center mb-4">
+        <ListTodo className="h-7 w-7 text-sage-dark" strokeWidth={2} />
+      </div>
+      <p className="font-display text-xl text-ink mb-1">{message.title}</p>
+      <p className="text-muted text-sm">{message.subtitle}</p>
+    </div>
+  );
+
   return (
-    <div className="animate-fade-in-up">
-      <div className="space-y-3">
-        {tasks.length === 0 ? (
-          <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4 flex items-start">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5 mr-2"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <div className="text-blue-800">
-              <p>No tasks found. Add a new task above.</p>
-            </div>
+    <div className="space-y-4">
+      {tasks.length > 0 && (
+        <div className="card-organic p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in-up">
+          <div className="inline-flex p-1 bg-cream rounded-2xl">
+            {FILTERS.map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                className={`px-4 py-1.5 text-sm font-medium rounded-xl transition-all duration-200 ${
+                  filter === f.key
+                    ? 'bg-paper text-clay shadow-sm'
+                    : 'text-muted hover:text-ink'
+                }`}
+              >
+                {f.label}
+                {f.key === 'active' && activeCount > 0 && (
+                  <span className="ml-1.5 text-xs text-clay/70">{activeCount}</span>
+                )}
+              </button>
+            ))}
           </div>
-        ) : (
-          <div className="space-y-3">
-            {tasks.map((task) => (
+
+          <div className="flex items-center gap-2 px-1">
+            <label htmlFor="sortBy" className="text-sm text-muted">Sort</label>
+            <select
+              id="sortBy"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="text-sm bg-cream border border-line rounded-xl px-3 py-1.5 text-ink focus:outline-none focus:border-clay focus:ring-2 focus:ring-clay/15 transition-all duration-200"
+            >
+              {SORTS.map((s) => (
+                <option key={s.key} value={s.key}>{s.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
+      {tasks.length === 0 ? (
+        emptyState({ title: 'Nothing here yet', subtitle: 'Add your first task above to get going.' })
+      ) : visibleTasks.length === 0 ? (
+        emptyState({ title: `No ${filter} tasks`, subtitle: 'Try a different filter.' })
+      ) : (
+        <div className="space-y-3">
+          {visibleTasks.map((task, index) => {
+            const styles = PRIORITY_STYLES[task.priority] || PRIORITY_STYLES.Low;
+            const overdue = isTaskOverdue(task.dueDate) && !task.completed;
+            return (
               <div
                 key={task.id}
-                className={`bg-white rounded-lg shadow-sm border-l-4 ${task.completed ? 'border-gray-200 opacity-75' :
-                  task.priority === 'High' ? 'border-red-500' :
-                    task.priority === 'Medium' ? 'border-yellow-500' :
-                      'border-green-500'} transition-all duration-200 hover:shadow-md`}
+                className={`card-organic overflow-hidden animate-fade-in-up ${task.completed ? 'opacity-70' : ''}`}
+                style={{ animationDelay: `${Math.min(index * 60, 360)}ms` }}
               >
-                <div className="p-4">
-                  <div className="flex justify-between items-start space-x-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start">
-                        <input
-                          type="checkbox"
-                          checked={task.completed}
-                          onChange={() => handleTaskComplete(task.id)}
-                          id={`task-${task.id}`}
-                          className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                        />
-                        <label
-                          htmlFor={`task-${task.id}`}
-                          className={`ml-3 block ${task.completed ? 'line-through text-gray-500' : 'text-gray-800'}`}
-                        >
-                          <div className="flex items-center">
-                            <span className="mr-2">{getCategoryIcon(task.category)}</span>
-                            <span>{task.text}</span>
-                          </div>
-                        </label>
-                      </div>
-
-                      <div className="ml-7 mt-2 space-y-1">
-                        {task.location && weatherData[task.location] && (
-                          <div className="flex items-center text-sm text-gray-600">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4 mr-1 text-gray-500"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"
-                              />
-                            </svg>
-                            <span className="font-medium">{task.location}:</span>
-                            <span className="ml-1">{weatherData[task.location].temp}°F,</span>
-                            <span className="ml-1">{weatherData[task.location].condition}</span>
-                          </div>
-                        )}
-
-                        {task.dueDate && (
-                          <div className={`flex items-center text-sm ${isTaskOverdue(task.dueDate) && !task.completed ? 'text-red-600' : 'text-gray-500'}`}>
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4 mr-1"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                              />
-                            </svg>
-                            <span>Due: {format(parseISO(task.dueDate), 'MMM d, yyyy')}</span>
-                            {isTaskOverdue(task.dueDate) && !task.completed && (
-                              <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-red-100 text-red-800 rounded-full">
-                                Overdue
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-end space-y-2">
-                      <button
-                        onClick={() => dispatch(deleteTask(task.id))}
-                        className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors duration-200"
-                        title="Delete task"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                <div className="flex">
+                  <span className={`w-1.5 flex-shrink-0 ${task.completed ? 'bg-line' : styles.bar}`} />
+                  <div className="flex-1 p-4 sm:p-5">
+                    <div className="flex justify-between items-start gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            checked={task.completed}
+                            onChange={() => handleTaskComplete(task.id)}
+                            id={`task-${task.id}`}
+                            className="mt-1 h-4.5 w-4.5 accent-sage rounded cursor-pointer"
+                            style={{ accentColor: '#7e9572' }}
                           />
-                        </svg>
-                      </button>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${task.priority === 'High' ? 'bg-red-100 text-red-800' :
-                          task.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-green-100 text-green-800'
-                        }`}>
-                        {task.priority}
-                      </span>
+                          <label
+                            htmlFor={`task-${task.id}`}
+                            className={`block cursor-pointer ${task.completed ? 'line-through text-muted' : 'text-ink'}`}
+                          >
+                            <span className="mr-2">{getCategoryIcon(task.category)}</span>
+                            <span className="font-medium">{task.text}</span>
+                          </label>
+                        </div>
+
+                        <div className="ml-7 mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+                          {task.location && weatherData[task.location] && (
+                            <span className="inline-flex items-center text-sm text-muted">
+                              <Cloud className="h-4 w-4 mr-1 text-sage-dark" />
+                              <span className="font-medium text-ink/80">{task.location}</span>
+                              <span className="ml-1">{weatherData[task.location].temp}°F · {weatherData[task.location].condition}</span>
+                            </span>
+                          )}
+
+                          {task.dueDate && (
+                            <span className={`inline-flex items-center text-sm ${overdue ? 'text-clay-dark' : 'text-muted'}`}>
+                              <Calendar className="h-4 w-4 mr-1" />
+                              {format(parseISO(task.dueDate), 'MMM d, yyyy')}
+                              {overdue && (
+                                <span className="ml-2 px-2 py-0.5 text-xs font-semibold bg-clay-soft text-clay-dark rounded-full">
+                                  Overdue
+                                </span>
+                              )}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                        <button
+                          onClick={() => dispatch(deleteTask(task.id))}
+                          className="p-2 text-muted hover:text-clay-dark hover:bg-clay-soft/60 rounded-xl transition-colors duration-200"
+                          title="Delete task"
+                          aria-label="Delete task"
+                        >
+                          <Trash2 className="h-4.5 w-4.5" />
+                        </button>
+                        <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${styles.badge}`}>
+                          {task.priority}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

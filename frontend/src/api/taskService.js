@@ -1,41 +1,25 @@
-import axios from 'axios';
+import client from './client';
 
-const API_URL = 'http://localhost:5000/api';
-
-export const fetchTasks = async (userId) => {
-  try {
-    const response = await axios.get(`${API_URL}/tasks`, {
-      params: { userId }
-    });
-    return response.data;
-  } catch (error) {
-    throw new Error(error.response?.data?.message || 'Failed to fetch tasks');
-  }
+// GET /api/tasks?filter=&sort= -> { tasks }
+export const fetchTasks = async (params = {}) => {
+  const { data } = await client.get('/tasks', { params });
+  return data.tasks;
 };
 
+// POST /api/tasks -> { task }
 export const createTask = async (taskData) => {
-  try {
-    const response = await axios.post(`${API_URL}/tasks`, taskData);
-    return response.data;
-  } catch (error) {
-    throw new Error(error.response?.data?.message || 'Failed to create task');
-  }
+  const { data } = await client.post('/tasks', taskData);
+  return data.task;
 };
 
-export const deleteTask = async (taskId) => {
-  try {
-    const response = await axios.delete(`${API_URL}/tasks/${taskId}`);
-    return response.data;
-  } catch (error) {
-    throw new Error(error.response?.data?.message || 'Failed to delete task');
-  }
-};
-
+// PATCH /api/tasks/:id -> { task }
 export const updateTask = async (taskId, updates) => {
-  try {
-    const response = await axios.put(`${API_URL}/tasks/${taskId}`, updates);
-    return response.data;
-  } catch (error) {
-    throw new Error(error.response?.data?.message || 'Failed to update task');
-  }
+  const { data } = await client.patch(`/tasks/${taskId}`, updates);
+  return data.task;
+};
+
+// DELETE /api/tasks/:id -> { success, id }
+export const deleteTask = async (taskId) => {
+  const { data } = await client.delete(`/tasks/${taskId}`);
+  return data.id;
 };
