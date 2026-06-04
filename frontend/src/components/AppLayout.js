@@ -14,7 +14,6 @@ const AppLayout = () => {
     const { error } = useSelector((state) => state.todos);
     const { error: authError, isAuthenticated } = useSelector((state) => state.auth);
 
-    // Restore a saved session (token + user) on first load.
     useEffect(() => {
       const storedUser = localStorage.getItem('user');
       const token = localStorage.getItem('token');
@@ -23,7 +22,6 @@ const AppLayout = () => {
       }
     }, [dispatch]);
 
-    // Load tasks from the API whenever the user becomes authenticated.
     useEffect(() => {
       if (isAuthenticated) {
         dispatch(fetchTasks());
@@ -58,39 +56,57 @@ const AppLayout = () => {
       }
     }, [authError]);
   
+    const Brand = ({ compact = false }) => (
+      <header className={`text-center animate-fade-in-up ${compact ? 'mb-5' : 'mb-10'}`}>
+        <div className={`inline-flex items-center justify-center ${compact ? 'mb-3' : 'mb-4'}`}>
+          <div className="relative">
+            <div className={`bg-clay-soft rounded-3xl shadow-[0_18px_40px_-20px_rgba(184,95,56,0.55)] animate-float-soft ${compact ? 'p-2.5' : 'p-4'}`}>
+              <Sun className={compact ? 'h-6 w-6 text-clay' : 'h-8 w-8 text-clay'} strokeWidth={2.2} />
+            </div>
+            <span className={`absolute -bottom-2 -right-2 bg-sage-soft rounded-full border border-paper ${compact ? 'p-1' : 'p-1.5'}`}>
+              <Leaf className={compact ? 'h-3.5 w-3.5 text-sage-dark' : 'h-4 w-4 text-sage-dark'} strokeWidth={2.2} />
+            </span>
+          </div>
+        </div>
+        <h1 className={`font-display font-semibold text-ink ${compact ? 'text-3xl mb-1' : 'text-5xl sm:text-6xl mb-2'}`}>
+          TaskMaster
+        </h1>
+          <p className="text-sm text-muted max-w-sm mx-auto leading-relaxed">
+            A calmer way to plan your day — tasks, priorities, and a peek at the weather.
+          </p>
+      </header>
+    );
+
+    if (!isAuthenticated) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center px-4 py-4">
+          <div className="w-full max-w-md">
+            <Brand compact />
+            <Auth />
+          </div>
+          <ToastContainer
+            position="top-right"
+            autoClose={4000}
+            closeOnClick
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            toastClassName="!rounded-2xl !bg-paper !text-ink !shadow-lg !border !border-line"
+            progressClassName="!bg-clay"
+          />
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen flex flex-col">
         <div className="flex-1 w-full px-4 py-10 sm:py-14">
           <div className="max-w-2xl mx-auto">
-
-            <header className="text-center mb-10 animate-fade-in-up">
-              <div className="inline-flex items-center justify-center mb-5">
-                <div className="relative">
-                  <div className="p-4 bg-clay-soft rounded-3xl shadow-[0_18px_40px_-20px_rgba(184,95,56,0.55)] animate-float-soft">
-                    <Sun className="h-8 w-8 text-clay" strokeWidth={2.2} />
-                  </div>
-                  <span className="absolute -bottom-2 -right-2 p-1.5 bg-sage-soft rounded-full border border-paper">
-                    <Leaf className="h-4 w-4 text-sage-dark" strokeWidth={2.2} />
-                  </span>
-                </div>
-              </div>
-              <h1 className="font-display text-5xl sm:text-6xl font-semibold text-ink mb-3">
-                TaskMaster
-              </h1>
-              <p className="text-base text-muted max-w-md mx-auto leading-relaxed">
-                A calmer way to plan your day — tasks, priorities, and a peek at the weather.
-              </p>
-            </header>
-
+            <Brand />
             <div className="space-y-6">
               <Auth />
-
-              {isAuthenticated && (
-                <>
-                  <TaskInput />
-                  <TaskList />
-                </>
-              )}
+              <TaskInput />
+              <TaskList />
             </div>
           </div>
         </div>

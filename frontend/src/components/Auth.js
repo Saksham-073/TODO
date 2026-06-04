@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { login, register, logout, clearError, selectAuth } from '../redux/authSlice';
-import { Fingerprint, AlertCircle, X, Eye, EyeOff, LogIn, UserPlus, LogOut, Loader2, Sparkles } from 'lucide-react';
+import { AlertCircle, X, Eye, EyeOff, LogIn, UserPlus, LogOut, Loader2, Sparkles } from 'lucide-react';
 
 const DEMO_USERNAME = 'demo';
 const DEMO_PASSWORD = 'demo1234';
@@ -77,8 +77,8 @@ const Auth = () => {
 
   return (
     <div className="card-organic overflow-hidden max-w-md mx-auto animate-fade-in-up">
-      <div className="p-8">
-        <div className="flex w-full p-1 bg-cream rounded-2xl mb-8">
+      <div className="p-6 sm:p-8">
+        <div className="flex w-full p-1 bg-cream rounded-2xl mb-6">
           {[
             { key: 'login', label: 'Sign in' },
             { key: 'register', label: 'Create account' },
@@ -99,13 +99,8 @@ const Auth = () => {
           ))}
         </div>
 
-        <div className="text-center mb-8">
-          <div className="mx-auto w-16 h-16 bg-clay-soft rounded-2xl flex items-center justify-center mb-4">
-            {isRegister
-              ? <UserPlus className="h-8 w-8 text-clay" strokeWidth={2} />
-              : <Fingerprint className="h-8 w-8 text-clay" strokeWidth={2} />}
-          </div>
-          <h2 className="font-display text-3xl font-semibold text-ink">
+        <div className="text-center mb-5">
+          <h2 className="font-display text-2xl sm:text-3xl font-semibold text-ink">
             {isRegister ? 'Create your account' : 'Welcome back'}
           </h2>
           <p className="text-muted text-sm mt-1">
@@ -132,7 +127,7 @@ const Auth = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="username" className="block text-sm font-medium text-ink mb-1.5">
               Username
